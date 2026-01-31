@@ -340,13 +340,13 @@ actor HTTPConnection: Hashable {
 
 // MARK: - HTTP Request
 
-struct HTTPRequest {
+struct HTTPRequest: Sendable {
     let method: String
     let path: String
     let headers: [String: String]
     let body: Data
     
-    static func parse(from data: Data) throws -> HTTPRequest {
+    nonisolated static func parse(from data: Data) throws -> HTTPRequest {
         // Find header/body separator
         let separatorData = "\r\n\r\n".data(using: .utf8)!
         
@@ -394,13 +394,13 @@ struct HTTPRequest {
 
 // MARK: - HTTP Response
 
-struct HTTPResponse {
+struct HTTPResponse: Sendable {
     let statusCode: Int
     let statusMessage: String
     let headers: [String: String]
     let body: Data
     
-    func toData() -> Data {
+    nonisolated func toData() -> Data {
         var response = "HTTP/1.1 \(statusCode) \(statusMessage)\r\n"
         
         for (key, value) in headers {
@@ -416,7 +416,7 @@ struct HTTPResponse {
         return data
     }
     
-    static func json(_ object: [String: Any], statusCode: Int = 200) -> HTTPResponse {
+    nonisolated static func json(_ object: [String: Any], statusCode: Int = 200) -> HTTPResponse {
         guard let jsonData = try? JSONSerialization.data(withJSONObject: object, options: []) else {
             return error(statusCode: 500, message: "Failed to encode JSON")
         }
@@ -429,7 +429,7 @@ struct HTTPResponse {
         )
     }
     
-    static func error(statusCode: Int, message: String) -> HTTPResponse {
+    nonisolated static func error(statusCode: Int, message: String) -> HTTPResponse {
         let errorObject: [String: Any] = [
             "error": message,
             "status": statusCode
@@ -438,7 +438,7 @@ struct HTTPResponse {
         return json(errorObject, statusCode: statusCode)
     }
     
-    private static func statusMessage(for code: Int) -> String {
+    nonisolated private static func statusMessage(for code: Int) -> String {
         switch code {
         case 200: return "OK"
         case 400: return "Bad Request"
@@ -451,7 +451,7 @@ struct HTTPResponse {
 }
 
 // MARK: - HTTP Error
-enum HTTPError: Error {
+enum HTTPError: Error, Sendable {
     case invalidRequest
     case unsupportedMethod
     case notFound
