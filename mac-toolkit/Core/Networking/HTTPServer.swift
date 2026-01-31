@@ -167,23 +167,30 @@ actor HTTPConnection: Hashable {
     }
     
     private func processRequest(_ request: HTTPRequest) async -> HTTPResponse {
+        print("processRequest called: \(request.method) \(request.path)")
         switch (request.method, request.path) {
         case ("GET", "/health"):
+            print("Routing to handleHealthRequest")
             return handleHealthRequest()
             
         case ("POST", "/ocr"):
+            print("Routing to handleOCRRequest")
             return await handleOCRRequest(request)
             
         case ("POST", "/tts"):
+            print("Routing to handleTTSRequest")
             return await handleTTSRequest(request)
             
         case ("POST", "/speak"):
+            print("Routing to handleSpeakRequest")
             return await handleSpeakRequest(request)
             
         case ("POST", "/speak/stop"):
+            print("Routing to handleStopSpeakRequest")
             return await handleStopSpeakRequest(request)
             
         default:
+            print("Route not found: \(request.method) \(request.path)")
             return HTTPResponse.error(statusCode: 404, message: "Not Found")
         }
     }
@@ -255,34 +262,78 @@ actor HTTPConnection: Hashable {
     }
     
     private func handleTTSRequest(_ request: HTTPRequest) async -> HTTPResponse {
+        print("handleTTSRequest called")
         do {
             // Determine content type
             let contentType = request.headers["content-type"] ?? ""
+            print("Content-Type: \(contentType)")
             
             guard contentType.contains("application/json") else {
+                print("Unsupported Media Type")
                 return HTTPResponse.error(statusCode: 415, message: "Unsupported Media Type. Only application/json is supported.")
             }
             
             // Parse JSON request
+            print("Parsing JSON request")
             guard let json = try? JSONSerialization.jsonObject(with: request.body) as? [String: Any],
                   let text = json["text"] as? String else {
+                print("Invalid JSON or missing text data")
                 return HTTPResponse.error(statusCode: 400, message: "Invalid JSON or missing text data")
             }
             
             let language = json["language"] as? String ?? "zh-CN"
+            print("Text: \(text), Language: \(language)")
             
-            // Perform TTS using async method
-            _ = try await TTSService.shared.synthesize(text: text, language: language)
+            // Generate audio using system say command and convert to MP3
+            print("Generating audio")
+            let tempAiffPath = NSTemporaryDirectory() + "speech.aiff"
+            let tempMP3Path = NSTemporaryDirectory() + "speech.mp3"
             
-            // For now, return success message since TTS is not fully implemented
-            let response: [String: Any] = [
-                "status": "success",
-                "message": "Text-to-speech conversion started",
-                "text": text,
-                "language": language
+            // Convert language code to voice name (simplified for testing)
+            let voiceName = language.starts(with: "zh") ? "Ting-Ting" : "Alex"
+            
+            // Step 1: Generate AIFF audio using say command
+            print("Generating AIFF audio")
+            let sayTask = Process()
+            sayTask.launchPath = "/usr/bin/say"
+            sayTask.arguments = ["-v", voiceName, "-o", tempAiffPath, text]
+            
+            try sayTask.run()
+            sayTask.waitUntilExit()
+            
+            // Step 2: Convert AIFF to MP3 using afconvert command
+            print("Converting AIFF to MP3")
+            let convertTask = Process()
+            convertTask.launchPath = "/usr/bin/afconvert"
+            convertTask.arguments = [
+                tempAiffPath,
+                tempMP3Path,
+                "-f", "mp4f",
+                "-d", "aac"
             ]
             
-            return HTTPResponse.json(response)
+            try convertTask.run()
+            convertTask.waitUntilExit()
+            
+            // Read the generated MP3 file
+            print("Reading MP3 file")
+            let audioData = try Data(contentsOf: URL(fileURLWithPath: tempMP3Path))
+            print("MP3 file size: \(audioData.count) bytes")
+            
+            // Clean up temporary files
+            try? FileManager.default.removeItem(atPath: tempAiffPath)
+            try? FileManager.default.removeItem(atPath: tempMP3Path)
+            
+            print("Returning MP3 response, size: \(audioData.count) bytes")
+            return HTTPResponse(
+                statusCode: 200,
+                statusMessage: "OK",
+                headers: [
+                    "Content-Type": "audio/mpeg",
+                    "Content-Disposition": "attachment; filename=speech.mp3"
+                ],
+                body: audioData
+            )
             
         } catch {
             print("TTS error: \(error)")
