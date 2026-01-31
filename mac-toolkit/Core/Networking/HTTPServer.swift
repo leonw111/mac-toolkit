@@ -174,6 +174,12 @@ actor HTTPConnection: Hashable {
         case ("POST", "/ocr"):
             return await handleOCRRequest(request)
             
+        case ("POST", "/tts"):
+            return await handleTTSRequest(request)
+            
+        case ("POST", "/speak"):
+            return await handleSpeakRequest(request)
+            
         default:
             return HTTPResponse.error(statusCode: 404, message: "Not Found")
         }
@@ -241,6 +247,76 @@ actor HTTPConnection: Hashable {
             
         } catch {
             print("OCR error: \(error)")
+            return HTTPResponse.error(statusCode: 500, message: "Internal Server Error: \(error.localizedDescription)")
+        }
+    }
+    
+    private func handleTTSRequest(_ request: HTTPRequest) async -> HTTPResponse {
+        do {
+            // Determine content type
+            let contentType = request.headers["content-type"] ?? ""
+            
+            guard contentType.contains("application/json") else {
+                return HTTPResponse.error(statusCode: 415, message: "Unsupported Media Type. Only application/json is supported.")
+            }
+            
+            // Parse JSON request
+            guard let json = try? JSONSerialization.jsonObject(with: request.body) as? [String: Any],
+                  let text = json["text"] as? String else {
+                return HTTPResponse.error(statusCode: 400, message: "Invalid JSON or missing text data")
+            }
+            
+            let language = json["language"] as? String ?? "zh-CN"
+            
+            // Perform TTS using async method
+            try await TTSService.shared.speak(text: text, language: language)
+            
+            let response: [String: Any] = [
+                "status": "success",
+                "message": "Text-to-speech conversion started",
+                "text": text,
+                "language": language
+            ]
+            
+            return HTTPResponse.json(response)
+            
+        } catch {
+            print("TTS error: \(error)")
+            return HTTPResponse.error(statusCode: 500, message: "Internal Server Error: \(error.localizedDescription)")
+        }
+    }
+    
+    private func handleSpeakRequest(_ request: HTTPRequest) async -> HTTPResponse {
+        do {
+            // Determine content type
+            let contentType = request.headers["content-type"] ?? ""
+            
+            guard contentType.contains("application/json") else {
+                return HTTPResponse.error(statusCode: 415, message: "Unsupported Media Type. Only application/json is supported.")
+            }
+            
+            // Parse JSON request
+            guard let json = try? JSONSerialization.jsonObject(with: request.body) as? [String: Any],
+                  let text = json["text"] as? String else {
+                return HTTPResponse.error(statusCode: 400, message: "Invalid JSON or missing text data")
+            }
+            
+            let language = json["language"] as? String ?? "zh-CN"
+            
+            // Perform speak using async method
+            try await TTSService.shared.speak(text: text, language: language)
+            
+            let response: [String: Any] = [
+                "status": "success",
+                "message": "Text spoken successfully",
+                "text": text,
+                "language": language
+            ]
+            
+            return HTTPResponse.json(response)
+            
+        } catch {
+            print("Speak error: \(error)")
             return HTTPResponse.error(statusCode: 500, message: "Internal Server Error: \(error.localizedDescription)")
         }
     }
