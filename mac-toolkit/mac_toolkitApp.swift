@@ -15,13 +15,19 @@ struct mac_toolkitApp: App {
         WindowGroup {
             MainView()
                 .environmentObject(appState)
-                .onAppear {
+                .task {
                     // Start HTTP Server when app launches
-                    SimpleHTTPServer.shared.start()
+                    do {
+                        try await HTTPServer.shared.start()
+                    } catch {
+                        print("Failed to start HTTP Server: \(error)")
+                    }
                 }
                 .onDisappear {
                     // Stop HTTP Server when app exits
-                    SimpleHTTPServer.shared.stop()
+                    Task {
+                        await HTTPServer.shared.stop()
+                    }
                 }
         }
         .windowStyle(.automatic)
