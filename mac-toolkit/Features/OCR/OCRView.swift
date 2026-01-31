@@ -100,8 +100,13 @@ struct OCRView: View {
         isProcessing = true
         defer { isProcessing = false }
 
+        guard let image = selectedImage, let tiffData = image.tiffRepresentation else {
+            resultText = "错误: 无法获取图片数据"
+            return
+        }
+
         do {
-            resultText = try await OCRService.shared.recognizeText(from: Data())
+            resultText = try await OCRService.shared.recognizeText(from: tiffData)
         } catch {
             resultText = "错误: \(error.localizedDescription)"
         }
