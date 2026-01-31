@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 
 struct OCRView: View {
     @State private var selectedImage: NSImage?
