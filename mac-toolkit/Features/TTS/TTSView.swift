@@ -52,7 +52,7 @@ struct TTSView: View {
         defer { isSpeaking = false }
 
         do {
-            try await TTSService.shared.speak(text: inputText)
+            try await SpeakService.shared.speak(text: inputText)
         } catch {
             print("Error: \(error.localizedDescription)")
         }
@@ -60,6 +60,9 @@ struct TTSView: View {
 
     private func stop() {
         isSpeaking = false
+        Task {
+            await SpeakService.shared.stop()
+        }
     }
 }
 

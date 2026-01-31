@@ -180,6 +180,9 @@ actor HTTPConnection: Hashable {
         case ("POST", "/speak"):
             return await handleSpeakRequest(request)
             
+        case ("POST", "/speak/stop"):
+            return await handleStopSpeakRequest(request)
+            
         default:
             return HTTPResponse.error(statusCode: 404, message: "Not Found")
         }
@@ -269,8 +272,9 @@ actor HTTPConnection: Hashable {
             let language = json["language"] as? String ?? "zh-CN"
             
             // Perform TTS using async method
-            try await TTSService.shared.speak(text: text, language: language)
+            _ = try await TTSService.shared.synthesize(text: text, language: language)
             
+            // For now, return success message since TTS is not fully implemented
             let response: [String: Any] = [
                 "status": "success",
                 "message": "Text-to-speech conversion started",
@@ -304,7 +308,7 @@ actor HTTPConnection: Hashable {
             let language = json["language"] as? String ?? "zh-CN"
             
             // Perform speak using async method
-            try await TTSService.shared.speak(text: text, language: language)
+            try await SpeakService.shared.speak(text: text, language: language)
             
             let response: [String: Any] = [
                 "status": "success",
@@ -319,6 +323,18 @@ actor HTTPConnection: Hashable {
             print("Speak error: \(error)")
             return HTTPResponse.error(statusCode: 500, message: "Internal Server Error: \(error.localizedDescription)")
         }
+    }
+    
+    private func handleStopSpeakRequest(_ request: HTTPRequest) async -> HTTPResponse {
+        // Perform stop using sync method
+        await SpeakService.shared.stop()
+        
+        let response: [String: Any] = [
+            "status": "success",
+            "message": "Speech stopped successfully"
+        ]
+        
+        return HTTPResponse.json(response)
     }
     
     private func sendResponse(_ data: Data) async {

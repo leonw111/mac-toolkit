@@ -2,43 +2,28 @@
 //  TTSService.swift
 //  mac-toolkit
 //
-//  TTS service implementation using AVSpeechSynthesizer
+//  TTS service placeholder for future implementation
+//  Will be used to generate audio files from text
 //
 
 import Foundation
-import AVFoundation
 
 actor TTSService {
     public static let shared = TTSService()
-    private let synthesizer = AVSpeechSynthesizer()
 
     private init() {}
 
-    public func speak(text: String, language: String = "zh-CN") async throws {
-        return try await withCheckedThrowingContinuation { continuation in
-            let utterance = AVSpeechUtterance(string: text)
-            utterance.voice = AVSpeechSynthesisVoice(language: language)
-            utterance.rate = 0.5
-            utterance.pitchMultiplier = 1.0
-            utterance.volume = 1.0
+    // TODO: Implement text-to-speech conversion to audio file
+    public func synthesize(text: String, language: String = "zh-CN") async throws -> Data {
+        throw NSError(domain: "TTSService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Not implemented yet"])    }
 
-            synthesizer.speak(utterance)
-            continuation.resume()
-        }
-    }
-
+    // TODO: Implement getAvailableVoices
     public func getAvailableVoices() -> [String] {
-        return AVSpeechSynthesisVoice.speechVoices().map { $0.name }
+        return []
     }
 
+    // TODO: Implement getAvailableLanguages
     public func getAvailableLanguages() -> [String] {
-        let voices = AVSpeechSynthesisVoice.speechVoices()
-        var languages: Set<String> = []
-        
-        for voice in voices {
-            languages.insert(voice.language)
-        }
-        
-        return Array(languages).sorted()
+        return []
     }
 }
