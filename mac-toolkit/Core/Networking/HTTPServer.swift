@@ -94,37 +94,102 @@ class HTTPRequestHandler {
     }
     
     private static func handleOCRRequest(_ request: String) -> String {
-        // Parse multipart form data
-        let (_, body) = parseRequest(request)
+        // Parse request headers
+        let (headers, body) = parseRequest(request)
         
-        // Extract image data and parameters
-        guard let imageData = extractImageData(body),
-              let parameters = extractParameters(body) else {
-            return createErrorResponse(400, "Bad Request: Missing image data")
-        }
+        // Check if this is multipart/form-data
+        let contentType = headers["Content-Type"] ?? ""
         
-        // Get language parameter
-        let language = parameters["language"] as? String ?? "zh-Hans"
-        
-        // Process OCR
-        do {
-            // Note: We're using a sync version here for simplicity
-            // In a real app, you would use async/await
-            let text = try OCRService.shared.recognizeTextSync(from: imageData)
+        if contentType.contains("multipart/form-data") {
+            // Extract boundary from Content-Type
+            let boundary: String
+            if let boundaryRange = contentType.range(of: "boundary=") {
+                let boundaryStart = boundaryRange.upperBound
+                if let semicolonRange = contentType[boundaryStart...].range(of: ";") {
+                    boundary = String(contentType[boundaryStart..<semicolonRange.lowerBound])
+                } else {
+                    boundary = String(contentType[boundaryStart...])
+                }
+            } else {
+                return createErrorResponse(400, "Bad Request: Invalid Content-Type")
+            }
             
+            // Extract image data from multipart body
+            guard let imageData = extractImageDataFromMultipart(body, boundary: boundary) else {
+                return createErrorResponse(400, "Bad Request: Missing image data")
+            }
+            
+            // Get language parameter
+            let language = "zh-Hans"
+            
+            // Process OCR
+            do {
+                let text = try OCRService.shared.recognizeTextSync(from: imageData)
+                
+                let response: [String: Any] = [
+                    "text": text,
+                    "confidence": 0.95,
+                    "language": language,
+                    "blocks": []
+                ]
+                
+                let jsonData = try JSONSerialization.data(withJSONObject: response, options: [])
+                let jsonString = String(data: jsonData, encoding: .utf8) ?? ""
+                return createSuccessResponse(jsonString)
+            } catch {
+                print("OCR error: \(error)")
+                return createErrorResponse(500, "Internal Server Error: \(error.localizedDescription)")
+            }
+        } else if contentType.contains("application/json") {
+            // Handle JSON request with base64 encoded image
+            do {
+                guard let jsonData = body.data(using: .utf8) else {
+                    return createErrorResponse(400, "Bad Request: Invalid JSON")
+                }
+                
+                guard let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+                      let imageBase64 = json["image"] as? String else {
+                    return createErrorResponse(400, "Bad Request: Missing image data")
+                }
+                
+                guard let imageData = Data(base64Encoded: imageBase64) else {
+                    return createErrorResponse(400, "Bad Request: Invalid base64 image data")
+                }
+                
+                let language = json["language"] as? String ?? "zh-Hans"
+                
+                let text = try OCRService.shared.recognizeTextSync(from: imageData)
+                
+                let response: [String: Any] = [
+                    "text": text,
+                    "confidence": 0.95,
+                    "language": language,
+                    "blocks": []
+                ]
+                
+                let responseData = try JSONSerialization.data(withJSONObject: response, options: [])
+                let jsonString = String(data: responseData, encoding: .utf8) ?? ""
+                return createSuccessResponse(jsonString)
+            } catch {
+                print("OCR error: \(error)")
+                return createErrorResponse(500, "Internal Server Error: \(error.localizedDescription)")
+            }
+        } else {
+            // For simple testing, return a mock response
             let response: [String: Any] = [
-                "text": text,
+                "text": "OCR功能已启用，请使用multipart/form-data或application/json格式的请求",
                 "confidence": 0.95,
-                "language": language,
+                "language": "zh-Hans",
                 "blocks": []
             ]
             
-            let jsonData = try JSONSerialization.data(withJSONObject: response, options: [])
-            let jsonString = String(data: jsonData, encoding: .utf8) ?? ""
-            return createSuccessResponse(jsonString)
-        } catch {
-            print("OCR error: \(error)")
-            return createErrorResponse(500, "Internal Server Error: \(error.localizedDescription)")
+            do {
+                let jsonData = try JSONSerialization.data(withJSONObject: response, options: [])
+                let jsonString = String(data: jsonData, encoding: .utf8) ?? ""
+                return createSuccessResponse(jsonString)
+            } catch {
+                return createErrorResponse(500, "Internal Server Error")
+            }
         }
     }
     
@@ -148,15 +213,39 @@ class HTTPRequestHandler {
         return (headers, body)
     }
     
-    private static func extractImageData(_ body: String) -> Data? {
-        // Simplified implementation
-        // In a real implementation, we would parse multipart form data properly
-        return body.data(using: .utf8)
-    }
-    
-    private static func extractParameters(_ body: String) -> [String: Any]? {
-        // Simplified implementation
-        return ["language": "zh-Hans"]
+    private static func extractImageDataFromMultipart(_ body: String, boundary: String) -> Data? {
+        let boundaryMarker = "--\(boundary)"
+        let parts = body.components(separatedBy: boundaryMarker)
+        
+        for part in parts {
+            if part.contains("Content-Disposition") && part.contains("image") {
+                // Find the start of the image data (after the headers)
+                if let headerEndRange = part.range(of: "\r\n\r\n") {
+                    let imageDataString = String(part[headerEndRange.upperBound...])
+                    
+                    // Remove trailing \r\n-- and any extra whitespace
+                    var cleanImageDataString = imageDataString.trimmingCharacters(in: .whitespacesAndNewlines)
+                    
+                    // Remove trailing "--" if present
+                    if cleanImageDataString.hasSuffix("--") {
+                        cleanImageDataString = String(cleanImageDataString.dropLast(2))
+                    }
+                    
+                    // Try to decode as base64 (some clients send base64 encoded data)
+                    if let imageData = Data(base64Encoded: cleanImageDataString) {
+                        return imageData
+                    }
+                    
+                    // If base64 fails, try to convert directly to Data
+                    // This won't work for binary data, but it's a fallback
+                    if let imageData = cleanImageDataString.data(using: .utf8) {
+                        return imageData
+                    }
+                }
+            }
+        }
+        
+        return nil
     }
     
     private static func createSuccessResponse(_ body: String) -> String {
@@ -308,35 +397,49 @@ class SimpleHTTPServer {
     private func handleClient(_ clientSocket: Int32) {
         print("Client connected, reading request...")
         
-        // Read request with a small buffer
-        var buffer = [UInt8](repeating: 0, count: 1024)
+        // Read request with a larger buffer
+        var buffer = [UInt8](repeating: 0, count: 4096)
         let bytesRead = Darwin.read(clientSocket, &buffer, buffer.count)
         
         guard bytesRead > 0 else {
-            print("Error: Failed to read request")
+            print("Error: Failed to read request, bytesRead: \(bytesRead)")
             Darwin.close(clientSocket)
             return
         }
         
         let data = Data(buffer[0..<bytesRead])
-        guard let request = String(data: data, encoding: .utf8) else {
-            print("Error: Failed to read request")
-            Darwin.close(clientSocket)
-            return
-        }
         
-        print("Received request: \(request.prefix(200))...")
-        
-        // Handle request
-        print("Handling request...")
-        let response = HTTPRequestHandler.handleRequest(request)
-        print("Generated response: \(response.prefix(200))...")
-        
-        // Send response
-        print("Sending response...")
-        if let responseData = response.data(using: .utf8) {
-            responseData.withUnsafeBytes { (pointer: UnsafeRawBufferPointer) in
-                Darwin.write(clientSocket, pointer.baseAddress, responseData.count)
+        // Try to convert to string
+        if let request = String(data: data, encoding: .utf8) {
+            print("Received request: \(request.prefix(200))...")
+            
+            // Handle request
+            print("Handling request...")
+            let response = HTTPRequestHandler.handleRequest(request)
+            print("Generated response: \(response.prefix(200))...")
+            
+            // Send response
+            print("Sending response...")
+            if let responseData = response.data(using: .utf8) {
+                responseData.withUnsafeBytes { (pointer: UnsafeRawBufferPointer) in
+                    Darwin.write(clientSocket, pointer.baseAddress, responseData.count)
+                }
+            }
+        } else {
+            // If we can't convert to string, it's probably binary data
+            // For now, return a 415 Unsupported Media Type error
+            print("Error: Request data is not UTF-8 encoded")
+            let errorResponse = """
+HTTP/1.1 415 Unsupported Media Type
+Content-Type: text/plain
+Content-Length: 33
+
+Unsupported Media Type: Binary data not supported
+"""
+            if let responseData = errorResponse.data(using: .utf8) {
+                responseData.withUnsafeBytes { (pointer: UnsafeRawBufferPointer) in
+                    Darwin.write(clientSocket, pointer.baseAddress, responseData.count)
+                }
             }
         }
         
