@@ -2,16 +2,26 @@
 //  mac_toolkitApp.swift
 //  mac-toolkit
 //
-//  Created by leon on 2026/1/31.
+//  Application entry point
 //
 
 import SwiftUI
 
 @main
 struct mac_toolkitApp: App {
+    @StateObject private var appState = AppState.shared
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
+                .environmentObject(appState)
+        }
+        .windowStyle(.automatic)
+        .defaultSize(width: 900, height: 650)
+
+        Settings {
+            SettingsView()
+                .environmentObject(appState)
         }
     }
 }
