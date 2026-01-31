@@ -15,6 +15,14 @@ struct mac_toolkitApp: App {
         WindowGroup {
             MainView()
                 .environmentObject(appState)
+                .onAppear {
+                    // Start HTTP Server when app launches
+                    SimpleHTTPServer.shared.start()
+                }
+                .onDisappear {
+                    // Stop HTTP Server when app exits
+                    SimpleHTTPServer.shared.stop()
+                }
         }
         .windowStyle(.automatic)
         .defaultSize(width: 900, height: 650)

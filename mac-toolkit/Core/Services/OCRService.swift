@@ -83,4 +83,33 @@ actor OCRService {
     public func getSupportedLanguages() -> [String] {
         return ["zh-Hans", "en-US"]
     }
+    
+    public func recognizeTextSync(from image: Data) throws -> String {
+        guard let ciImage = CIImage(data: image) else {
+            throw NSError(domain: "OCRService", code: -2, userInfo: [NSLocalizedDescriptionKey: "无效的图片数据"])
+        }
+
+        let processedImage = preprocessImage(ciImage)
+        
+        var result: Result<String, Error>?
+        let semaphore = DispatchSemaphore(value: 0)
+        
+        recognizeTextFromCIImage(processedImage) { res in
+            result = res
+            semaphore.signal()
+        }
+        
+        semaphore.wait()
+        
+        guard let finalResult = result else {
+            throw NSError(domain: "OCRService", code: -5, userInfo: [NSLocalizedDescriptionKey: "识别失败"])
+        }
+        
+        switch finalResult {
+        case .success(let text):
+            return text
+        case .failure(let error):
+            throw error
+        }
+    }
 }
