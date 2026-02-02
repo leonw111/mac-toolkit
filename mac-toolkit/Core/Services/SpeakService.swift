@@ -28,6 +28,8 @@ actor SpeakService {
             // 优先使用指定的声音名称
             if let voiceName = voiceName, 
                let voice = AVSpeechSynthesisVoice.speechVoices().first(where: { $0.name == voiceName }) {
+                // 检查声音是否与指定语言兼容
+                // 注：这里简化处理，实际应用中可能需要更复杂的语言匹配逻辑
                 utterance.voice = voice
             } else {
                 // 回退到按语言选择
@@ -59,6 +61,12 @@ actor SpeakService {
         }
         
         return Array(languages).sorted()
+    }
+    
+    public func getVoiceLanguage(_ voiceName: String) -> String? {
+        return AVSpeechSynthesisVoice.speechVoices()
+            .first(where: { $0.name == voiceName })?
+            .language
     }
     
     public func stop() {

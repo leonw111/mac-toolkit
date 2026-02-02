@@ -7,6 +7,7 @@
 
 import Foundation
 import Network
+import AVFAudio
 
 // MARK: - HTTP Server
 
@@ -362,9 +363,21 @@ actor HTTPConnection: Hashable {
             
             let language = json["language"] as? String ?? "zh-CN"
             let voiceName = json["voiceName"] as? String
-            let rate = (json["rate"] as? NSNumber)?.floatValue
-            let pitchMultiplier = (json["pitchMultiplier"] as? NSNumber)?.floatValue
-            let volume = (json["volume"] as? NSNumber)?.floatValue
+            let rate = (json["rate"] as? NSNumber)?.floatValue ?? 0.5
+            let pitchMultiplier = (json["pitchMultiplier"] as? NSNumber)?.floatValue ?? 1.0
+            let volume = (json["volume"] as? NSNumber)?.floatValue ?? 1.0
+            
+            // Check language compatibility if voiceName is specified
+            var warning: String? = nil
+            if let voiceName = voiceName {
+                if let voiceLanguage = await SpeakService.shared.getVoiceLanguage(voiceName) {
+                    // Check if voice language is compatible with requested language
+                    // Simplified check: just compare the language codes
+                    if !voiceLanguage.starts(with: language.split(separator: "-").first ?? "") {
+                        warning = "Voice \(voiceName) may not be fully compatible with language \(language). Voice's native language is \(voiceLanguage)."
+                    }
+                }
+            }
             
             // Perform speak using async method
             try await SpeakService.shared.speak(
@@ -376,16 +389,25 @@ actor HTTPConnection: Hashable {
                 volume: volume
             )
             
-            let speakData: [String: Any] = [
+            var speakData: [String: Any] = [
                 "status": "success",
                 "message": "Text spoken successfully",
                 "text": text,
                 "language": language,
-                "voiceName": voiceName ?? NSNull(),
-                "rate": rate ?? NSNull(),
-                "pitchMultiplier": pitchMultiplier ?? NSNull(),
-                "volume": volume ?? NSNull()
+                "rate": rate,
+                "pitchMultiplier": pitchMultiplier,
+                "volume": volume
             ]
+            
+            // Only add voiceName if it was specified
+            if let voiceName = voiceName {
+                speakData["voiceName"] = voiceName
+            }
+            
+            // Add warning if language compatibility issue
+            if let warning = warning {
+                speakData["warning"] = warning
+            }
             
             return HTTPResponse.standard(speakData, code: 200, message: "Speech playback successful")
             
@@ -408,16 +430,17 @@ actor HTTPConnection: Hashable {
     }
     
     private func handleVoicesRequest() async -> HTTPResponse {
-        // Get available voices from SpeakService
-        let voices = await SpeakService.shared.getAvailableVoices()
-        
-        // Get available languages for reference
-        let languages = await SpeakService.shared.getAvailableLanguages()
+        // Get all available voices with their languages
+        let voicesWithLanguages = AVSpeechSynthesisVoice.speechVoices().map { voice in
+            return [
+                "name": voice.name,
+                "language": voice.language
+            ] as [String: Any]
+        }
         
         let voicesData: [String: Any] = [
-            "voices": voices,
-            "languages": languages,
-            "count": voices.count
+            "voices": voicesWithLanguages,
+            "count": voicesWithLanguages.count
         ]
         
         return HTTPResponse.standard(voicesData, code: 200, message: "Available voices retrieved successfully")

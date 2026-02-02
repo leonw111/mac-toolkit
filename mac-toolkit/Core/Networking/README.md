@@ -199,16 +199,26 @@ Content-Type: application/json
   "message": "Available voices retrieved successfully",
   "data": {
     "voices": [
-      "Alex",
-      "Samantha",
-      "Siri",
-      "Ting-Ting",
-      "Yu-Shu"
-    ],
-    "languages": [
-      "en-US",
-      "zh-CN",
-      "fr-FR"
+      {
+        "name": "Alex",
+        "language": "en-US"
+      },
+      {
+        "name": "Samantha",
+        "language": "en-US"
+      },
+      {
+        "name": "Siri",
+        "language": "zh-CN"
+      },
+      {
+        "name": "Ting-Ting",
+        "language": "zh-CN"
+      },
+      {
+        "name": "Yu-Shu",
+        "language": "zh-CN"
+      }
     ],
     "count": 5
   }
