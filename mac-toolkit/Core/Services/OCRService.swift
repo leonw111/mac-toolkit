@@ -16,7 +16,7 @@ actor OCRService {
 
     public func recognizeText(from image: Data) async throws -> String {
         guard let ciImage = CIImage(data: image) else {
-            throw NSError(domain: "OCRService", code: -2, userInfo: [NSLocalizedDescriptionKey: "无效的图片数据"])
+            throw NSError(domain: "OCRService", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid image data"])
         }
 
         let processedImage = preprocessImage(ciImage)
@@ -52,7 +52,7 @@ actor OCRService {
             }
 
             guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                completion(.failure(NSError(domain: "OCRService", code: -3, userInfo: [NSLocalizedDescriptionKey: "未找到文本"])))
+                completion(.failure(NSError(domain: "OCRService", code: -3, userInfo: [NSLocalizedDescriptionKey: "No text found"])))
                 return
             }
 
@@ -61,7 +61,7 @@ actor OCRService {
             }
 
             if recognizedStrings.isEmpty {
-                completion(.failure(NSError(domain: "OCRService", code: -4, userInfo: [NSLocalizedDescriptionKey: "未识别到文本"])))
+                completion(.failure(NSError(domain: "OCRService", code: -4, userInfo: [NSLocalizedDescriptionKey: "No text recognized"])))
                 return
             }
 
@@ -86,7 +86,7 @@ actor OCRService {
     
     public func recognizeTextSync(from image: Data) throws -> String {
         guard let ciImage = CIImage(data: image) else {
-            throw NSError(domain: "OCRService", code: -2, userInfo: [NSLocalizedDescriptionKey: "无效的图片数据"])
+            throw NSError(domain: "OCRService", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid image data"])
         }
 
         let processedImage = preprocessImage(ciImage)
@@ -102,7 +102,7 @@ actor OCRService {
         semaphore.wait()
         
         guard let finalResult = result else {
-            throw NSError(domain: "OCRService", code: -5, userInfo: [NSLocalizedDescriptionKey: "识别失败"])
+            throw NSError(domain: "OCRService", code: -5, userInfo: [NSLocalizedDescriptionKey: "Recognition failed"])
         }
         
         switch finalResult {

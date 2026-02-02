@@ -14,45 +14,45 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("设置")
+            Text("Settings")
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            GroupBox("OCR 设置") {
+            GroupBox("OCR Settings") {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("识别语言")
+                    Text("Recognition Language")
                     Picker("", selection: $ocrLanguage) {
-                        Text("简体中文").tag("zh-Hans")
-                        Text("繁体中文").tag("zh-Hant")
-                        Text("英语").tag("en-US")
-                        Text("日语").tag("ja-JP")
-                        Text("韩语").tag("ko-KR")
+                        Text("Simplified Chinese").tag("zh-Hans")
+                        Text("Traditional Chinese").tag("zh-Hant")
+                        Text("English").tag("en-US")
+                        Text("Japanese").tag("ja-JP")
+                        Text("Korean").tag("ko-KR")
                     }
                     .labelsHidden()
                 }
                 .padding()
             }
 
-            GroupBox("TTS 设置") {
+            GroupBox("TTS Settings") {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("语音语言")
+                    Text("Speech Language")
                     Picker("", selection: $ttsLanguage) {
-                        Text("中文").tag("zh-CN")
-                        Text("英语").tag("en-US")
-                        Text("日语").tag("ja-JP")
+                        Text("Chinese").tag("zh-CN")
+                        Text("English").tag("en-US")
+                        Text("Japanese").tag("ja-JP")
                     }
                     .labelsHidden()
                 }
                 .padding()
             }
 
-            GroupBox("STT 设置") {
+            GroupBox("STT Settings") {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("识别语言")
+                    Text("Recognition Language")
                     Picker("", selection: $sttLanguage) {
-                        Text("中文").tag("zh-CN")
-                        Text("英语").tag("en-US")
-                        Text("日语").tag("ja-JP")
+                        Text("Chinese").tag("zh-CN")
+                        Text("English").tag("en-US")
+                        Text("Japanese").tag("ja-JP")
                     }
                     .labelsHidden()
                 }

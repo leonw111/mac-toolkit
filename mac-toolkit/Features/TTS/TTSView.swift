@@ -13,7 +13,7 @@ struct TTSView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("TTS - 文字转语音")
+            Text("TTS - Text to Speech")
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
@@ -25,14 +25,14 @@ struct TTSView: View {
                 .frame(minHeight: 150)
 
             HStack {
-                Button("朗读") {
+                Button("Speak") {
                     Task {
                         await speak()
                     }
                 }
                 .disabled(inputText.isEmpty || isSpeaking)
 
-                Button("停止") {
+                Button("Stop") {
                     stop()
                 }
                 .disabled(!isSpeaking)
@@ -41,7 +41,7 @@ struct TTSView: View {
             }
 
             if isSpeaking {
-                ProgressView("朗读中...")
+                ProgressView("Speaking...")
             }
         }
         .padding()

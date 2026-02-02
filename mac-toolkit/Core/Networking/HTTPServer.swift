@@ -203,7 +203,7 @@ actor HTTPConnection: Hashable {
             "version": "1.0.0"
         ]
         
-        return HTTPResponse.standard(healthData, code: 200, message: "服务正常")
+        return HTTPResponse.standard(healthData, code: 200, message: "Service is normal")
     }
     
     private func handleOCRRequest(_ request: HTTPRequest) async -> HTTPResponse {
@@ -253,7 +253,7 @@ actor HTTPConnection: Hashable {
                 "blocks": []
             ]
             
-            return HTTPResponse.standard(ocrData, code: 200, message: "识别成功")
+            return HTTPResponse.standard(ocrData, code: 200, message: "Recognition successful")
             
         } catch {
             print("OCR error: \(error)")
@@ -368,7 +368,7 @@ actor HTTPConnection: Hashable {
                 "language": language
             ]
             
-            return HTTPResponse.standard(speakData, code: 200, message: "语音播放成功")
+            return HTTPResponse.standard(speakData, code: 200, message: "Speech playback successful")
             
         } catch {
             print("Speak error: \(error)")
@@ -385,7 +385,7 @@ actor HTTPConnection: Hashable {
             "message": "Speech stopped successfully"
         ]
         
-        return HTTPResponse.standard(stopData, code: 200, message: "语音停止成功")
+        return HTTPResponse.standard(stopData, code: 200, message: "Speech stopped successfully")
     }
     
     private func sendResponse(_ data: Data) async {
@@ -559,7 +559,7 @@ struct HTTPResponse: Sendable {
         return data
     }
     
-    nonisolated static func standard(_ data: Any? = nil, code: Int = 200, message: String = "操作成功") -> HTTPResponse {
+    nonisolated static func standard(_ data: Any? = nil, code: Int = 200, message: String = "Operation successful") -> HTTPResponse {
         let responseObject: [String: Any] = [
             "code": code,
             "message": message,
@@ -579,7 +579,7 @@ struct HTTPResponse: Sendable {
     }
     
     nonisolated static func json(_ object: [String: Any], statusCode: Int = 200) -> HTTPResponse {
-        return standard(object, code: statusCode, message: "操作成功")
+        return standard(object, code: statusCode, message: "Operation successful")
     }
     
     nonisolated static func error(statusCode: Int, message: String) -> HTTPResponse {

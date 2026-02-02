@@ -15,7 +15,7 @@ struct STTView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("STT - 语音转文字")
+            Text("STT - Speech to Text")
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
@@ -27,7 +27,7 @@ struct STTView: View {
                         .scaleEffect(isRecording ? 1.2 : 1.0)
                         .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: isRecording)
 
-                    Text("录音中...")
+                    Text("Recording...")
                         .foregroundColor(.red)
                         .font(.headline)
                 }
@@ -36,7 +36,7 @@ struct STTView: View {
                     Image(systemName: "waveform")
                         .font(.system(size: 60))
                         .foregroundColor(.gray)
-                    Text("点击开始录音")
+                    Text("Click to start recording")
                         .foregroundColor(.gray)
                 }
                 .frame(height: 200)
@@ -58,7 +58,7 @@ struct STTView: View {
             }
 
             HStack {
-                Button(isRecording ? "停止录音" : "开始录音") {
+                Button(isRecording ? "Stop Recording" : "Start Recording") {
                     Task {
                         await toggleRecording()
                     }
@@ -67,7 +67,7 @@ struct STTView: View {
                 Spacer()
 
                 if !resultText.isEmpty {
-                    Button("复制") {
+                    Button("Copy") {
                         copyResult()
                     }
                 }
@@ -82,7 +82,7 @@ struct STTView: View {
             do {
                 resultText = try await STTService.shared.transcribe(audio: Data())
             } catch {
-                resultText = "错误: \(error.localizedDescription)"
+                resultText = "Error: \(error.localizedDescription)"
             }
         } else {
             isRecording = true

@@ -1,65 +1,65 @@
-# RESTful API 文档
+# RESTful API Documentation
 
-## 简介
+## Introduction
 
-本文档描述了 macOS Toolkit 应用的 RESTful API 接口规范，包括所有可用的端点、请求格式、响应格式和示例。
+This document describes the RESTful API interface specifications for the macOS Toolkit application, including all available endpoints, request formats, response formats, and examples.
 
-## API 基础信息
+## API Basic Information
 
-### 基础 URL
+### Base URL
 ```
 http://localhost:54321
 ```
 
-### 响应结构
+### Response Structure
 
-所有 API 响应（除了二进制数据响应）都使用统一的 JSON 格式：
+All API responses (except for binary data responses) use a unified JSON format:
 
-#### 成功响应
+#### Success Response
 ```json
 {
   "code": 200,
-  "message": "操作成功",
+  "message": "Operation successful",
   "data": {
-    // 具体业务数据
+    // Specific business data
   }
 }
 ```
 
-#### 错误响应
+#### Error Response
 ```json
 {
   "code": 400,
-  "message": "错误信息",
+  "message": "Error message",
   "data": null
 }
 ```
 
-### HTTP 状态码
+### HTTP Status Codes
 
-| 状态码 | 描述 |
-|-------|------|
-| 200 | 请求成功 |
-| 400 | 请求参数错误 |
-| 404 | 资源不存在 |
-| 415 | 不支持的媒体类型 |
-| 500 | 服务器内部错误 |
+| Status Code | Description |
+|------------|-------------|
+| 200 | Request successful |
+| 400 | Invalid request parameters |
+| 404 | Resource not found |
+| 415 | Unsupported media type |
+| 500 | Internal server error |
 
-## API 端点
+## API Endpoints
 
-### 1. 健康检查
+### 1. Health Check
 
-**端点**: `GET /api/health`
+**Endpoint**: `GET /api/health`
 
-**描述**: 检查服务是否正常运行
+**Description**: Check if the service is running normally
 
-**请求参数**: 无
+**Request Parameters**: None
 
-**响应示例**:
+**Response Example**:
 ```json
 {
   "code": 200,
-  "message": "服务正常",
+  "message": "Service is normal",
   "data": {
     "status": "ok",
     "timestamp": 1643721600,
@@ -69,40 +69,40 @@ http://localhost:54321
 }
 ```
 
-### 2. OCR 识别
+### 2. OCR Recognition
 
-**端点**: `POST /api/ocr`
+**Endpoint**: `POST /api/ocr`
 
-**描述**: 识别图像中的文字
+**Description**: Recognize text in images
 
-**请求格式**:
+**Request Formats**:
 
-#### 表单数据格式
+#### Form Data Format
 ```
 Content-Type: multipart/form-data
 
-// 表单字段
-image: [图片文件]
-language: [语言代码，可选，默认为 zh-Hans]
+// Form fields
+image: [image file]
+language: [language code, optional, default: zh-Hans]
 ```
 
-#### JSON 格式
+#### JSON Format
 ```json
 Content-Type: application/json
 
 {
-  "image": "[Base64 编码的图片数据]",
-  "language": "zh-Hans" // 可选，默认为 zh-Hans
+  "image": "[Base64 encoded image data]",
+  "language": "zh-Hans" // optional, default: zh-Hans
 }
 ```
 
-**响应示例**:
+**Response Example**:
 ```json
 {
   "code": 200,
-  "message": "识别成功",
+  "message": "Recognition successful",
   "data": {
-    "text": "识别的文字内容",
+    "text": "Recognized text content",
     "confidence": 0.95,
     "language": "zh-Hans",
     "blocks": []
@@ -110,73 +110,73 @@ Content-Type: application/json
 }
 ```
 
-### 3. 语音合成
+### 3. Text-to-Speech
 
-**端点**: `POST /api/tts`
+**Endpoint**: `POST /api/tts`
 
-**描述**: 将文本转换为语音文件
+**Description**: Convert text to speech file
 
-**请求格式**:
+**Request Format**:
 ```json
 Content-Type: application/json
 
 {
-  "text": "要转换的文本",
-  "language": "zh-CN" // 可选，默认为 zh-CN
+  "text": "Text to convert",
+  "language": "zh-CN" // optional, default: zh-CN
 }
 ```
 
-**响应**: 二进制 MP3 文件
+**Response**: Binary MP3 file
 
-**响应头**:
+**Response Headers**:
 ```
 Content-Type: audio/mpeg
 Content-Disposition: attachment; filename=speech.mp3
 ```
 
-### 4. 语音播放
+### 4. Speech Playback
 
-**端点**: `POST /api/speak`
+**Endpoint**: `POST /api/speak`
 
-**描述**: 播放指定的文本
+**Description**: Play the specified text
 
-**请求格式**:
+**Request Format**:
 ```json
 Content-Type: application/json
 
 {
-  "text": "要播放的文本",
-  "language": "zh-CN" // 可选，默认为 zh-CN
+  "text": "Text to speak",
+  "language": "zh-CN" // optional, default: zh-CN
 }
 ```
 
-**响应示例**:
+**Response Example**:
 ```json
 {
   "code": 200,
-  "message": "语音播放成功",
+  "message": "Speech playback successful",
   "data": {
     "status": "success",
     "message": "Text spoken successfully",
-    "text": "要播放的文本",
+    "text": "Text to speak",
     "language": "zh-CN"
   }
 }
 ```
 
-### 5. 停止语音
+### 5. Stop Speech
 
-**端点**: `POST /api/speak/stop`
+**Endpoint**: `POST /api/speak/stop`
 
-**描述**: 停止当前正在播放的语音
+**Description**: Stop currently playing speech
 
-**请求参数**: 无
+**Request Parameters**: None
 
-**响应示例**:
+**Response Example**:
 ```json
 {
   "code": 200,
-  "message": "语音停止成功",
+  "message": "Speech stopped successfully",
   "data": {
     "status": "success",
     "message": "Speech stopped successfully"
@@ -184,21 +184,21 @@ Content-Type: application/json
 }
 ```
 
-## 请求示例
+## Request Examples
 
-### 健康检查
+### Health Check
 ```bash
 curl -X GET http://localhost:54321/api/health
 ```
 
-### OCR 识别（表单数据）
+### OCR Recognition (Form Data)
 ```bash
 curl -X POST http://localhost:54321/api/ocr \
   -F "image=@test.jpg" \
   -F "language=zh-Hans"
 ```
 
-### OCR 识别（JSON）
+### OCR Recognition (JSON)
 ```bash
 curl -X POST http://localhost:54321/api/ocr \
   -H "Content-Type: application/json" \
@@ -208,57 +208,57 @@ curl -X POST http://localhost:54321/api/ocr \
   }'
 ```
 
-### 语音合成
+### Text-to-Speech
 ```bash
 curl -X POST http://localhost:54321/api/tts \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "这是一段测试文本",
+    "text": "This is a test text",
     "language": "zh-CN"
   }' \
   -o speech.mp3
 ```
 
-### 语音播放
+### Speech Playback
 ```bash
 curl -X POST http://localhost:54321/api/speak \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "这是一段测试文本",
+    "text": "This is a test text",
     "language": "zh-CN"
   }'
 ```
 
-### 停止语音
+### Stop Speech
 ```bash
 curl -X POST http://localhost:54321/api/speak/stop
 ```
 
-## 错误处理
+## Error Handling
 
-当 API 请求失败时，服务器会返回相应的错误代码和错误信息。以下是常见的错误情况：
+When an API request fails, the server returns the corresponding error code and error message. Here are common error scenarios:
 
 ### 400 Bad Request
-- 缺少必要的请求参数
-- 请求体格式错误
-- 无效的 Base64 编码图像数据
+- Missing required request parameters
+- Invalid request body format
+- Invalid Base64 encoded image data
 
 ### 415 Unsupported Media Type
-- 请求的 Content-Type 不支持
-- 仅支持 application/json 和 multipart/form-data（对于 OCR）
+- Unsupported Content-Type in request
+- Only application/json and multipart/form-data are supported (for OCR)
 
 ### 500 Internal Server Error
-- 服务器内部处理错误
-- 服务调用失败
+- Internal server processing error
+- Service call failure
 
-## 注意事项
+## Notes
 
-1. 所有 API 调用都需要在本地运行 macOS Toolkit 应用
-2. 语音合成 API 返回的是二进制 MP3 文件，不是 JSON 格式
-3. OCR API 支持两种请求格式：表单数据和 JSON
-4. 所有 API 端点都使用 `/api/` 前缀
+1. All API calls require the macOS Toolkit application to be running locally
+2. The Text-to-Speech API returns a binary MP3 file, not JSON format
+3. The OCR API supports two request formats: form data and JSON
+4. All API endpoints use the `/api/` prefix
 
-## 版本信息
+## Version Information
 
-- API 版本: 1.0.0
-- 最后更新: 2026-02-02
+- API Version: 1.0.0
+- Last Updated: 2026-02-02

@@ -16,7 +16,7 @@ struct OCRView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("OCR - 文字识别")
+            Text("OCR - Text Recognition")
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
@@ -31,7 +31,7 @@ struct OCRView: View {
                     Image(systemName: "doc.text.viewfinder")
                         .font(.system(size: 60))
                         .foregroundColor(.gray)
-                    Text("拖拽图片到这里或点击选择")
+                    Text("Drag image here or click to select")
                         .foregroundColor(.gray)
                 }
                 .frame(height: 200)
@@ -44,7 +44,7 @@ struct OCRView: View {
             }
 
             if isProcessing {
-                ProgressView("处理中...")
+                ProgressView("Processing...")
             }
 
             if !resultText.isEmpty {
@@ -60,12 +60,12 @@ struct OCRView: View {
             }
 
             HStack {
-                Button("选择图片") {
+                Button("Select Image") {
                     selectImage()
                 }
                 .disabled(isProcessing)
 
-                Button("识别文字") {
+                Button("Recognize Text") {
                     Task {
                         await performOCR()
                     }
@@ -75,7 +75,7 @@ struct OCRView: View {
                 Spacer()
 
                 if !resultText.isEmpty {
-                    Button("复制") {
+                    Button("Copy") {
                         copyResult()
                     }
                 }
@@ -101,14 +101,14 @@ struct OCRView: View {
         defer { isProcessing = false }
 
         guard let image = selectedImage, let tiffData = image.tiffRepresentation else {
-            resultText = "错误: 无法获取图片数据"
+            resultText = "Error: Failed to get image data"
             return
         }
 
         do {
             resultText = try await OCRService.shared.recognizeText(from: tiffData)
         } catch {
-            resultText = "错误: \(error.localizedDescription)"
+            resultText = "Error: \(error.localizedDescription)"
         }
     }
 
