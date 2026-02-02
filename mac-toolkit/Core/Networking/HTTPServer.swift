@@ -169,23 +169,23 @@ actor HTTPConnection: Hashable {
     private func processRequest(_ request: HTTPRequest) async -> HTTPResponse {
         print("processRequest called: \(request.method) \(request.path)")
         switch (request.method, request.path) {
-        case ("GET", "/health"):
+        case ("GET", "/api/health"):
             print("Routing to handleHealthRequest")
             return handleHealthRequest()
             
-        case ("POST", "/ocr"):
+        case ("POST", "/api/ocr"):
             print("Routing to handleOCRRequest")
             return await handleOCRRequest(request)
             
-        case ("POST", "/tts"):
+        case ("POST", "/api/tts"):
             print("Routing to handleTTSRequest")
             return await handleTTSRequest(request)
             
-        case ("POST", "/speak"):
+        case ("POST", "/api/speak"):
             print("Routing to handleSpeakRequest")
             return await handleSpeakRequest(request)
             
-        case ("POST", "/speak/stop"):
+        case ("POST", "/api/speak/stop"):
             print("Routing to handleStopSpeakRequest")
             return await handleStopSpeakRequest(request)
             
@@ -196,14 +196,14 @@ actor HTTPConnection: Hashable {
     }
     
     private func handleHealthRequest() -> HTTPResponse {
-        let response: [String: Any] = [
+        let healthData: [String: Any] = [
             "status": "ok",
             "timestamp": Date().timeIntervalSince1970,
             "service": "mac-toolkit-api",
             "version": "1.0.0"
         ]
         
-        return HTTPResponse.json(response)
+        return HTTPResponse.standard(healthData, code: 200, message: "服务正常")
     }
     
     private func handleOCRRequest(_ request: HTTPRequest) async -> HTTPResponse {
@@ -217,12 +217,12 @@ actor HTTPConnection: Hashable {
             if contentType.contains("multipart/form-data") {
                 // Extract boundary
                 guard let boundary = extractBoundary(from: contentType) else {
-                    return HTTPResponse.error(statusCode: 400, message: "Missing boundary in multipart request")
+                    return HTTPResponse.standard(nil, code: 400, message: "Missing boundary in multipart request")
                 }
                 
                 // Parse multipart data
                 guard let parsedData = parseMultipartFormData(request.body, boundary: boundary) else {
-                    return HTTPResponse.error(statusCode: 400, message: "Failed to parse multipart data")
+                    return HTTPResponse.standard(nil, code: 400, message: "Failed to parse multipart data")
                 }
                 
                 imageData = parsedData.imageData
@@ -233,31 +233,31 @@ actor HTTPConnection: Hashable {
                 guard let json = try? JSONSerialization.jsonObject(with: request.body) as? [String: Any],
                       let imageBase64 = json["image"] as? String,
                       let decodedData = Data(base64Encoded: imageBase64) else {
-                    return HTTPResponse.error(statusCode: 400, message: "Invalid JSON or missing image data")
+                    return HTTPResponse.standard(nil, code: 400, message: "Invalid JSON or missing image data")
                 }
                 
                 imageData = decodedData
                 language = json["language"] as? String ?? "zh-Hans"
                 
             } else {
-                return HTTPResponse.error(statusCode: 415, message: "Unsupported Media Type")
+                return HTTPResponse.standard(nil, code: 415, message: "Unsupported Media Type")
             }
             
             // Perform OCR using async method
             let text = try await OCRService.shared.recognizeText(from: imageData)
             
-            let response: [String: Any] = [
+            let ocrData: [String: Any] = [
                 "text": text,
                 "confidence": 0.95,
                 "language": language,
                 "blocks": []
             ]
             
-            return HTTPResponse.json(response)
+            return HTTPResponse.standard(ocrData, code: 200, message: "识别成功")
             
         } catch {
             print("OCR error: \(error)")
-            return HTTPResponse.error(statusCode: 500, message: "Internal Server Error: \(error.localizedDescription)")
+            return HTTPResponse.standard(nil, code: 500, message: "Internal Server Error: \(error.localizedDescription)")
         }
     }
     
@@ -270,7 +270,7 @@ actor HTTPConnection: Hashable {
             
             guard contentType.contains("application/json") else {
                 print("Unsupported Media Type")
-                return HTTPResponse.error(statusCode: 415, message: "Unsupported Media Type. Only application/json is supported.")
+                return HTTPResponse.standard(nil, code: 415, message: "Unsupported Media Type. Only application/json is supported.")
             }
             
             // Parse JSON request
@@ -278,7 +278,7 @@ actor HTTPConnection: Hashable {
             guard let json = try? JSONSerialization.jsonObject(with: request.body) as? [String: Any],
                   let text = json["text"] as? String else {
                 print("Invalid JSON or missing text data")
-                return HTTPResponse.error(statusCode: 400, message: "Invalid JSON or missing text data")
+                return HTTPResponse.standard(nil, code: 400, message: "Invalid JSON or missing text data")
             }
             
             let language = json["language"] as? String ?? "zh-CN"
@@ -337,7 +337,7 @@ actor HTTPConnection: Hashable {
             
         } catch {
             print("TTS error: \(error)")
-            return HTTPResponse.error(statusCode: 500, message: "Internal Server Error: \(error.localizedDescription)")
+            return HTTPResponse.standard(nil, code: 500, message: "Internal Server Error: \(error.localizedDescription)")
         }
     }
     
@@ -347,13 +347,13 @@ actor HTTPConnection: Hashable {
             let contentType = request.headers["content-type"] ?? ""
             
             guard contentType.contains("application/json") else {
-                return HTTPResponse.error(statusCode: 415, message: "Unsupported Media Type. Only application/json is supported.")
+                return HTTPResponse.standard(nil, code: 415, message: "Unsupported Media Type. Only application/json is supported.")
             }
             
             // Parse JSON request
             guard let json = try? JSONSerialization.jsonObject(with: request.body) as? [String: Any],
                   let text = json["text"] as? String else {
-                return HTTPResponse.error(statusCode: 400, message: "Invalid JSON or missing text data")
+                return HTTPResponse.standard(nil, code: 400, message: "Invalid JSON or missing text data")
             }
             
             let language = json["language"] as? String ?? "zh-CN"
@@ -361,18 +361,18 @@ actor HTTPConnection: Hashable {
             // Perform speak using async method
             try await SpeakService.shared.speak(text: text, language: language)
             
-            let response: [String: Any] = [
+            let speakData: [String: Any] = [
                 "status": "success",
                 "message": "Text spoken successfully",
                 "text": text,
                 "language": language
             ]
             
-            return HTTPResponse.json(response)
+            return HTTPResponse.standard(speakData, code: 200, message: "语音播放成功")
             
         } catch {
             print("Speak error: \(error)")
-            return HTTPResponse.error(statusCode: 500, message: "Internal Server Error: \(error.localizedDescription)")
+            return HTTPResponse.standard(nil, code: 500, message: "Internal Server Error: \(error.localizedDescription)")
         }
     }
     
@@ -380,12 +380,12 @@ actor HTTPConnection: Hashable {
         // Perform stop using sync method
         await SpeakService.shared.stop()
         
-        let response: [String: Any] = [
+        let stopData: [String: Any] = [
             "status": "success",
             "message": "Speech stopped successfully"
         ]
         
-        return HTTPResponse.json(response)
+        return HTTPResponse.standard(stopData, code: 200, message: "语音停止成功")
     }
     
     private func sendResponse(_ data: Data) async {
@@ -559,26 +559,31 @@ struct HTTPResponse: Sendable {
         return data
     }
     
-    nonisolated static func json(_ object: [String: Any], statusCode: Int = 200) -> HTTPResponse {
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: object, options: []) else {
-            return error(statusCode: 500, message: "Failed to encode JSON")
+    nonisolated static func standard(_ data: Any? = nil, code: Int = 200, message: String = "操作成功") -> HTTPResponse {
+        let responseObject: [String: Any] = [
+            "code": code,
+            "message": message,
+            "data": data ?? NSNull()
+        ]
+        
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: responseObject, options: []) else {
+            return standard(nil, code: 500, message: "Failed to encode JSON")
         }
         
         return HTTPResponse(
-            statusCode: statusCode,
-            statusMessage: statusMessage(for: statusCode),
+            statusCode: code,
+            statusMessage: statusMessage(for: code),
             headers: ["Content-Type": "application/json"],
             body: jsonData
         )
     }
     
+    nonisolated static func json(_ object: [String: Any], statusCode: Int = 200) -> HTTPResponse {
+        return standard(object, code: statusCode, message: "操作成功")
+    }
+    
     nonisolated static func error(statusCode: Int, message: String) -> HTTPResponse {
-        let errorObject: [String: Any] = [
-            "error": message,
-            "status": statusCode
-        ]
-        
-        return json(errorObject, statusCode: statusCode)
+        return standard(nil, code: statusCode, message: message)
     }
     
     nonisolated private static func statusMessage(for code: Int) -> String {
