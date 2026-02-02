@@ -164,11 +164,11 @@ Content-Type: application/json
 }
 ```
 
-### 5. Stop Speech
+### 5. Stop Speech Playback
 
 **Endpoint**: `POST /api/speak/stop`
 
-**Description**: Stop currently playing speech
+**Description**: Stop ongoing speech playback
 
 **Request Parameters**: None
 
@@ -180,6 +180,37 @@ Content-Type: application/json
   "data": {
     "status": "success",
     "message": "Speech stopped successfully"
+  }
+}
+```
+
+### 6. Get Available Voices
+
+**Endpoint**: `GET /api/voices`
+
+**Description**: Get list of available TTS voices and languages
+
+**Request Parameters**: None
+
+**Response Example**:
+```json
+{
+  "code": 200,
+  "message": "Available voices retrieved successfully",
+  "data": {
+    "voices": [
+      "Alex",
+      "Samantha",
+      "Siri",
+      "Ting-Ting",
+      "Yu-Shu"
+    ],
+    "languages": [
+      "en-US",
+      "zh-CN",
+      "fr-FR"
+    ],
+    "count": 5
   }
 }
 ```
@@ -225,13 +256,30 @@ curl -X POST http://localhost:54321/api/speak \
   -H "Content-Type: application/json" \
   -d '{
     "text": "This is a test text",
-    "language": "zh-CN"
+    "language": "zh-CN",
+    "voiceName": "Siri",
+    "rate": 0.5,
+    "pitchMultiplier": 1.0,
+    "volume": 1.0
   }'
 ```
+
+**Request Parameters**:
+- `text` (required): Text to speak
+- `language` (optional): Language code (default: "zh-CN")
+- `voiceName` (optional): Specific voice name (e.g., "Siri", "Yu-Shu")
+- `rate` (optional): Speaking rate (0.0-1.0, default: 0.5)
+- `pitchMultiplier` (optional): Pitch multiplier (0.5-2.0, default: 1.0)
+- `volume` (optional): Volume (0.0-1.0, default: 1.0)
 
 ### Stop Speech
 ```bash
 curl -X POST http://localhost:54321/api/speak/stop
+```
+
+### Get Available Voices
+```bash
+curl -X GET http://localhost:54321/api/voices
 ```
 
 ## Error Handling

@@ -14,13 +14,32 @@ actor SpeakService {
 
     private init() {}
 
-    public func speak(text: String, language: String = "zh-CN") async throws {
+    public func speak(
+        text: String, 
+        language: String = "zh-CN", 
+        voiceName: String? = nil, 
+        rate: Float? = nil, 
+        pitchMultiplier: Float? = nil, 
+        volume: Float? = nil
+    ) async throws {
         return try await withCheckedThrowingContinuation { continuation in
             let utterance = AVSpeechUtterance(string: text)
-            utterance.voice = AVSpeechSynthesisVoice(language: language)
-            utterance.rate = 0.5
-            utterance.pitchMultiplier = 1.0
-            utterance.volume = 1.0
+            
+            // 优先使用指定的声音名称
+            if let voiceName = voiceName, 
+               let voice = AVSpeechSynthesisVoice.speechVoices().first(where: { $0.name == voiceName }) {
+                utterance.voice = voice
+            } else {
+                // 回退到按语言选择
+                utterance.voice = AVSpeechSynthesisVoice(language: language)
+            }
+            
+            // 设置语速（默认 0.5）
+            utterance.rate = rate ?? 0.5
+            // 设置音调（默认 1.0）
+            utterance.pitchMultiplier = pitchMultiplier ?? 1.0
+            // 设置音量（默认 1.0）
+            utterance.volume = volume ?? 1.0
 
             synthesizer.speak(utterance)
             continuation.resume()

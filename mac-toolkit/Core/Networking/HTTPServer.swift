@@ -173,6 +173,10 @@ actor HTTPConnection: Hashable {
             print("Routing to handleHealthRequest")
             return handleHealthRequest()
             
+        case ("GET", "/api/voices"):
+            print("Routing to handleVoicesRequest")
+            return await handleVoicesRequest()
+            
         case ("POST", "/api/ocr"):
             print("Routing to handleOCRRequest")
             return await handleOCRRequest(request)
@@ -357,15 +361,30 @@ actor HTTPConnection: Hashable {
             }
             
             let language = json["language"] as? String ?? "zh-CN"
+            let voiceName = json["voiceName"] as? String
+            let rate = (json["rate"] as? NSNumber)?.floatValue
+            let pitchMultiplier = (json["pitchMultiplier"] as? NSNumber)?.floatValue
+            let volume = (json["volume"] as? NSNumber)?.floatValue
             
             // Perform speak using async method
-            try await SpeakService.shared.speak(text: text, language: language)
+            try await SpeakService.shared.speak(
+                text: text, 
+                language: language,
+                voiceName: voiceName,
+                rate: rate,
+                pitchMultiplier: pitchMultiplier,
+                volume: volume
+            )
             
             let speakData: [String: Any] = [
                 "status": "success",
                 "message": "Text spoken successfully",
                 "text": text,
-                "language": language
+                "language": language,
+                "voiceName": voiceName ?? NSNull(),
+                "rate": rate ?? NSNull(),
+                "pitchMultiplier": pitchMultiplier ?? NSNull(),
+                "volume": volume ?? NSNull()
             ]
             
             return HTTPResponse.standard(speakData, code: 200, message: "Speech playback successful")
@@ -386,6 +405,22 @@ actor HTTPConnection: Hashable {
         ]
         
         return HTTPResponse.standard(stopData, code: 200, message: "Speech stopped successfully")
+    }
+    
+    private func handleVoicesRequest() async -> HTTPResponse {
+        // Get available voices from SpeakService
+        let voices = await SpeakService.shared.getAvailableVoices()
+        
+        // Get available languages for reference
+        let languages = await SpeakService.shared.getAvailableLanguages()
+        
+        let voicesData: [String: Any] = [
+            "voices": voices,
+            "languages": languages,
+            "count": voices.count
+        ]
+        
+        return HTTPResponse.standard(voicesData, code: 200, message: "Available voices retrieved successfully")
     }
     
     private func sendResponse(_ data: Data) async {
